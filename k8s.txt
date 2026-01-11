@@ -1,0 +1,328 @@
+# Kubernetes Knowledge Base
+
+## 1. Introduction to Kubernetes
+
+Kubernetes (K8s) is an open-source container orchestration platform that automates the deployment, scaling, and management of containerized applications. Originally developed by Google and now maintained by the Cloud Native Computing Foundation (CNCF), Kubernetes has become the de facto standard for container orchestration.
+
+### Key Benefits
+- **Automated deployment and rollback**: Deploy applications and roll back changes automatically
+- **Self-healing**: Automatically restarts failed containers and reschedules workloads
+- **Horizontal scaling**: Scale applications up or down based on demand
+- **Service discovery and load balancing**: Automatic DNS and load balancing for services
+- **Secret and configuration management**: Manage sensitive information securely
+- **Storage orchestration**: Automatically mount storage systems of your choice
+
+## 2. Core Architecture
+
+### Control Plane Components
+The control plane manages the Kubernetes cluster and makes global decisions about the cluster state.
+
+**API Server (kube-apiserver)**: The front-end for the Kubernetes control plane, exposing the Kubernetes API. All communications between components go through the API server.
+
+**etcd**: Consistent and highly-available key-value store used as Kubernetes' backing store for all cluster data.
+
+**Scheduler (kube-scheduler)**: Watches for newly created Pods with no assigned node and selects a node for them to run on based on resource requirements, constraints, and other factors.
+
+**Controller Manager (kube-controller-manager)**: Runs controller processes that regulate the state of the cluster, including Node Controller, Replication Controller, Endpoints Controller, and Service Account Controller.
+
+**Cloud Controller Manager**: Integrates with underlying cloud provider APIs for managing cloud-specific resources.
+
+### Node Components
+Nodes are worker machines that run containerized applications.
+
+**Kubelet**: An agent that runs on each node, ensuring containers are running in a Pod according to the PodSpec.
+
+**Kube-proxy**: A network proxy that maintains network rules on nodes, enabling network communication to Pods from inside or outside the cluster.
+
+**Container Runtime**: Software responsible for running containers (e.g., containerd, CRI-O, Docker Engine).
+
+## 3. Kubernetes Objects
+
+### Pods
+The smallest deployable unit in Kubernetes. A Pod represents a single instance of a running process and can contain one or more containers that share storage and network resources.
+
+**Key characteristics**:
+- Pods are ephemeral and disposable
+- Each Pod gets a unique IP address
+- Containers within a Pod share the same network namespace
+- Typically managed by higher-level controllers rather than created directly
+
+### ReplicaSets
+Ensures that a specified number of Pod replicas are running at any given time. ReplicaSets are typically used by Deployments and rarely created directly.
+
+### Deployments
+Provides declarative updates for Pods and ReplicaSets. Deployments manage the rollout of new versions, rollbacks, and scaling of applications.
+
+**Common use cases**:
+- Rolling updates with zero downtime
+- Rollback to previous versions
+- Scaling applications horizontally
+- Pausing and resuming deployments
+
+### Services
+An abstraction that defines a logical set of Pods and a policy to access them. Services enable loose coupling between dependent Pods.
+
+**Service Types**:
+- **ClusterIP** (default): Exposes the service on an internal IP in the cluster
+- **NodePort**: Exposes the service on each Node's IP at a static port
+- **LoadBalancer**: Exposes the service externally using a cloud provider's load balancer
+- **ExternalName**: Maps the service to a DNS name
+
+### ConfigMaps and Secrets
+**ConfigMaps**: Store non-confidential configuration data in key-value pairs, allowing you to decouple configuration from container images.
+
+**Secrets**: Similar to ConfigMaps but designed to hold confidential data such as passwords, OAuth tokens, and SSH keys. Data is base64-encoded.
+
+### Namespaces
+Provide a mechanism for isolating groups of resources within a single cluster. Useful for dividing cluster resources between multiple users, teams, or projects.
+
+### Volumes
+Kubernetes supports many types of volumes, providing a way for containers to access storage that persists beyond the container's lifetime.
+
+**Common volume types**:
+- emptyDir: Temporary storage that exists as long as the Pod exists
+- hostPath: Mounts a file or directory from the host node's filesystem
+- persistentVolumeClaim: Claims a PersistentVolume resource
+- configMap/secret: Special volume types for injecting configuration
+
+### PersistentVolumes (PV) and PersistentVolumeClaims (PVC)
+**PersistentVolume**: A piece of storage in the cluster that has been provisioned by an administrator or dynamically provisioned using Storage Classes.
+
+**PersistentVolumeClaim**: A request for storage by a user. Claims can request specific size and access modes.
+
+### StatefulSets
+Manages the deployment and scaling of stateful applications, providing guarantees about the ordering and uniqueness of Pods. Useful for applications that require stable network identities or persistent storage.
+
+### DaemonSets
+Ensures that all or some Nodes run a copy of a Pod. Common use cases include running cluster storage daemons, log collection daemons, or node monitoring daemons.
+
+### Jobs and CronJobs
+**Jobs**: Creates one or more Pods and ensures that a specified number of them successfully terminate.
+
+**CronJobs**: Creates Jobs on a time-based schedule, similar to cron in Unix/Linux systems.
+
+## 4. Networking
+
+### Pod Networking
+Every Pod gets its own IP address, and Pods can communicate with each other directly without NAT. The Kubernetes network model requires that Pods on different nodes can communicate without NAT.
+
+### Service Networking
+Services get their own IP addresses (ClusterIP) and provide a stable endpoint for accessing Pods. Kube-proxy implements the service abstraction by maintaining network rules.
+
+### Ingress
+Manages external access to services in a cluster, typically HTTP/HTTPS. Ingress provides load balancing, SSL termination, and name-based virtual hosting.
+
+**Ingress Controllers**: Implement the Ingress resource (e.g., NGINX, Traefik, HAProxy, cloud-provider controllers).
+
+### Network Policies
+Network Policies allow you to control traffic flow between Pods and network endpoints at the IP address or port level. They act as a firewall for Kubernetes Pods.
+
+### DNS
+Kubernetes provides DNS service discovery out of the box. Each service gets a DNS name, and Pods can discover services using DNS queries.
+
+## 5. Storage
+
+### Storage Classes
+Define different classes of storage with varying performance characteristics. Enable dynamic provisioning of PersistentVolumes.
+
+**Parameters vary by provisioner**:
+- Type of disk (SSD, HDD)
+- Replication factor
+- IOPS limits
+- Encryption settings
+
+### Volume Snapshots
+Allow you to create a snapshot of a volume at a particular point in time for backup or cloning purposes.
+
+### CSI (Container Storage Interface)
+A standard interface for exposing storage systems to containerized workloads. Enables storage vendors to develop plugins without modifying core Kubernetes code.
+
+## 6. Configuration and Secrets Management
+
+### Environment Variables
+Can be set directly in Pod specifications or sourced from ConfigMaps and Secrets.
+
+### Volume Mounts
+ConfigMaps and Secrets can be mounted as files in containers, with each key becoming a file.
+
+### Security Best Practices
+- Use Secrets for sensitive data instead of ConfigMaps
+- Enable encryption at rest for Secrets in etcd
+- Use RBAC to control access to Secrets
+- Consider external secret management solutions (HashiCorp Vault, AWS Secrets Manager)
+- Avoid hardcoding secrets in container images
+
+## 7. Security
+
+### RBAC (Role-Based Access Control)
+Controls access to Kubernetes API resources based on roles assigned to users or service accounts.
+
+**Key concepts**:
+- **Role/ClusterRole**: Define permissions
+- **RoleBinding/ClusterRoleBinding**: Grant permissions to subjects
+- **ServiceAccount**: Provides identity for processes running in Pods
+
+### Pod Security
+**Security Context**: Defines privilege and access control settings for Pods and containers, including user IDs, capabilities, SELinux options, and more.
+
+**Pod Security Standards**: Define three policies (Privileged, Baseline, Restricted) that cover the security spectrum.
+
+### Network Security
+- Use Network Policies to restrict traffic
+- Implement service mesh for advanced security features
+- Enable TLS for inter-service communication
+
+### Image Security
+- Scan container images for vulnerabilities
+- Use private registries
+- Implement image signing and verification
+- Use minimal base images
+
+## 8. Monitoring and Logging
+
+### Metrics Server
+Provides resource usage metrics for nodes and pods, enabling autoscaling and dashboard features.
+
+### Prometheus
+Popular monitoring solution for Kubernetes that scrapes metrics from instrumented applications and system components.
+
+### Logging Strategies
+**Node-level logging**: Application logs are written to stdout/stderr and handled by the container runtime.
+
+**Cluster-level logging**: Centralized logging solutions collect logs from all nodes. Popular options include:
+- EFK Stack (Elasticsearch, Fluentd, Kibana)
+- ELK Stack (Elasticsearch, Logstash, Kibana)
+- Loki (Grafana Loki)
+
+### Observability Tools
+- Grafana: Visualization and dashboards
+- Jaeger/Zipkin: Distributed tracing
+- Kiali: Service mesh observability
+
+## 9. Scaling and Performance
+
+### Horizontal Pod Autoscaler (HPA)
+Automatically scales the number of Pods based on observed CPU utilization, memory, or custom metrics.
+
+### Vertical Pod Autoscaler (VPA)
+Automatically adjusts CPU and memory requests/limits for containers based on usage.
+
+### Cluster Autoscaler
+Automatically adjusts the number of nodes in the cluster based on resource demands.
+
+### Resource Requests and Limits
+**Requests**: Guaranteed resources that Kubernetes reserves for a container.
+
+**Limits**: Maximum resources a container can use. Containers exceeding memory limits are killed; CPU limits result in throttling.
+
+## 10. Advanced Concepts
+
+### Operators
+Extend Kubernetes with custom controllers that manage complex stateful applications using Custom Resource Definitions (CRDs).
+
+### Custom Resource Definitions (CRDs)
+Allow you to create custom resources and extend the Kubernetes API with your own resource types.
+
+### Helm
+Package manager for Kubernetes that helps define, install, and upgrade complex Kubernetes applications using charts.
+
+### Service Mesh
+Provides advanced networking features like traffic management, security, and observability. Popular options include Istio, Linkerd, and Consul.
+
+### GitOps
+Infrastructure-as-code approach where Git repositories serve as the source of truth for declarative infrastructure and applications. Tools include Flux and ArgoCD.
+
+## 11. Best Practices
+
+### Resource Management
+- Always define resource requests and limits
+- Use namespace resource quotas to prevent resource exhaustion
+- Monitor resource usage and adjust based on actual consumption
+
+### High Availability
+- Run multiple replicas of critical applications
+- Distribute Pods across multiple nodes using anti-affinity rules
+- Use Pod Disruption Budgets to ensure availability during voluntary disruptions
+- Set up multi-zone or multi-region clusters for critical workloads
+
+### Deployment Strategies
+- Use rolling updates for zero-downtime deployments
+- Implement health checks (liveness and readiness probes)
+- Test deployments in staging environments
+- Use canary or blue-green deployments for high-risk changes
+
+### Configuration Management
+- Use ConfigMaps for configuration
+- Store sensitive data in Secrets
+- Version control your manifests
+- Use Helm or Kustomize for templating
+
+### Security Hardening
+- Implement least-privilege RBAC policies
+- Enable Pod Security Standards
+- Regular security audits and vulnerability scanning
+- Keep Kubernetes and dependencies updated
+- Use private registries with authentication
+
+## 12. Troubleshooting Guide
+
+### Common Commands
+```
+kubectl get pods -n <namespace>
+kubectl describe pod <pod-name>
+kubectl logs <pod-name> [-c <container-name>]
+kubectl exec -it <pod-name> -- /bin/bash
+kubectl get events --sort-by='.lastTimestamp'
+kubectl top nodes
+kubectl top pods
+```
+
+### Common Issues
+
+**Pod stuck in Pending**: Check node resources, PersistentVolumeClaim binding, or scheduling constraints.
+
+**Pod CrashLoopBackOff**: Application failing to start. Check logs and ensure proper configuration and dependencies.
+
+**ImagePullBackOff**: Cannot pull container image. Verify image name, registry credentials, and network connectivity.
+
+**Service not accessible**: Verify service selector matches Pod labels, check network policies, and ensure Pods are ready.
+
+**Node NotReady**: Check kubelet status, network connectivity, and available resources on the node.
+
+## 13. Ecosystem Tools
+
+### CI/CD Integration
+- Jenkins X, GitLab CI, GitHub Actions, Tekton, Argo Workflows
+
+### Development Tools
+- Skaffold: Automates build, push, and deploy workflow
+- Tilt: Local development workflow automation
+- Kind/Minikube: Local Kubernetes clusters for development
+
+### Management Tools
+- Lens: Kubernetes IDE
+- K9s: Terminal-based UI
+- Kubectl plugins: Extend kubectl functionality
+
+### Policy Enforcement
+- OPA (Open Policy Agent): General-purpose policy engine
+- Kyverno: Kubernetes-native policy management
+
+## 14. Migration and Adoption
+
+### Migration Strategies
+- Start with stateless applications
+- Use containerization best practices
+- Implement proper CI/CD pipelines
+- Plan for data migration and persistence
+- Train teams on Kubernetes concepts
+
+### Cluster Setup Options
+- Managed Kubernetes services (EKS, GKE, AKS)
+- Self-managed using kubeadm, kops, or Kubespray
+- Lightweight distributions (K3s, MicroK8s) for edge/IoT
+
+### Multi-Cluster Management
+- Cluster federation for managing multiple clusters
+- Service mesh for cross-cluster communication
+- Centralized management tools (Rancher, OpenShift)
